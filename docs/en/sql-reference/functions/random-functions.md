@@ -23,6 +23,68 @@ Uses a linear congruential generator.
 
 ## randConstant {#randconstant}
 
-Returns a pseudo-random UInt32 number, The value is one for different blocks.
+Produces a constant column with a random value.
+
+The function is intended for service purposes.
+
+**Syntax**
+
+``` sql
+randConstant(x)
+```
+
+**Parameters**
+
+-   `x` — optional expression. Its value is ignored and used only for [Common Subexpression Elimination](index.md#common-subexpression-elimination).
+
+**Returned value**
+
+-   Pseudo-random number.
+
+Type: [UInt32](../data_types/int_uint.md).
+
+**Examples**
+
+Query:
+
+``` sql
+SELECT randConstant() >= 0
+```
+
+Result:
+
+``` text
+┌─greaterOrEquals(randConstant(), 0)─┐
+│                                  1 │
+└────────────────────────────────────┘
+```
+
+Query:
+
+``` sql
+SELECT randConstant(), randConstant()
+```
+
+Result:
+
+``` text
+┌─randConstant()─┬─randConstant()─┐
+│     2481280514 │     2481280514 │
+└────────────────┴────────────────┘
+```
+
+Query:
+
+``` sql
+SELECT randConstant(1), randConstant(2)
+```
+
+Result:
+
+``` text
+┌─randConstant(1)─┬─randConstant(2)─┐
+│      4115618163 │      1307298351 │
+└─────────────────┴─────────────────┘
+```
 
 [Original article](https://clickhouse.tech/docs/en/query_language/functions/random_functions/) <!--hide-->
