@@ -41,7 +41,7 @@ randConstant(x)
 
 -   Pseudo-random number.
 
-Type: [UInt32](../data_types/int_uint.md).
+Type: [UInt32](../data-types/int-uint.md).
 
 **Examples**
 
