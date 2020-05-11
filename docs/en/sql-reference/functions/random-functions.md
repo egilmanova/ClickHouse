@@ -25,17 +25,15 @@ Uses a linear congruential generator.
 
 Produces a constant column with a random value.
 
-The function is intended for service purposes.
-
 **Syntax**
 
 ``` sql
-randConstant(x)
+randConstant([x])
 ```
 
 **Parameters**
 
--   `x` — optional expression. Its value is ignored and used only for [Common Subexpression Elimination](index.md#common-subexpression-elimination).
+-   `x` — [Expression](../syntax.md#syntax-expressions) resulting in one of the [supported data types](../data-types/index.md). Its value is used for bypassing [common subexpression elimination](index.md#common-subexpression-elimination) if the function is called multiple times in one query. Optional parameter.
 
 **Returned value**
 
@@ -43,48 +41,23 @@ randConstant(x)
 
 Type: [UInt32](../data-types/int-uint.md).
 
-**Examples**
+**Example**
 
 Query:
 
 ``` sql
-SELECT randConstant() >= 0
+SELECT rand(), rand(1), rand(number), randConstant(), randConstant(1), randConstant(number)
+FROM numbers(3)
 ```
 
 Result:
 
 ``` text
-┌─greaterOrEquals(randConstant(), 0)─┐
-│                                  1 │
-└────────────────────────────────────┘
-```
-
-Query:
-
-``` sql
-SELECT randConstant(), randConstant()
-```
-
-Result:
-
-``` text
-┌─randConstant()─┬─randConstant()─┐
-│     2481280514 │     2481280514 │
-└────────────────┴────────────────┘
-```
-
-Query:
-
-``` sql
-SELECT randConstant(1), randConstant(2)
-```
-
-Result:
-
-``` text
-┌─randConstant(1)─┬─randConstant(2)─┐
-│      4115618163 │      1307298351 │
-└─────────────────┴─────────────────┘
+┌─────rand()─┬────rand(1)─┬─rand(number)─┬─randConstant()─┬─randConstant(1)─┬─randConstant(number)─┐
+│ 3047369878 │ 4132449925 │   4044508545 │     2740811946 │      4229401477 │           1924032898 │
+│ 2938880146 │ 1267722397 │   4154983056 │     2740811946 │      4229401477 │           1924032898 │
+│  956619638 │ 4238287282 │   1104342490 │     2740811946 │      4229401477 │           1924032898 │
+└────────────┴────────────┴──────────────┴────────────────┴─────────────────┴──────────────────────┘
 ```
 
 [Original article](https://clickhouse.tech/docs/en/query_language/functions/random_functions/) <!--hide-->
