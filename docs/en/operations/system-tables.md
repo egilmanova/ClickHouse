@@ -933,6 +933,79 @@ query_id:      acc4d61f-5bd1-4a3e-bc91-2180be37c915
 trace:         [94222141367858,94222152240175,94222152325351,94222152329944,94222152330796,94222151449980,94222144088167,94222151682763,94222144088167,94222151682763,94222144088167,94222144058283,94222144059248,94222091840750,94222091842302,94222091831228,94222189631488,140509950166747,140509942945935]
 ```
 
+## system.stack_trace {#system-tables_stack_trace}
+
+Contains stack traces of all server threads. Allows developers to introspect the server state.
+
+To analyze logs, use the `addressToLine`, `addressToSymbol` and `demangle` [introspection functions](../sql-reference/functions/introspection.md).
+
+Columns:
+
+-   `thread_id` ([UInt64](../sql-reference/data-types/int-uint.md)) — Thread identifier.
+-   `query_id` ([String](../sql-reference/data-types/string.md)) — Query identifier.
+-   `trace` ([Array(UInt64)](../sql-reference/data-types/array.md)) — A [stack trace](https://en.wikipedia.org/wiki/Stack_trace) which represents a list of physical addresses where the called methods are stored.
+
+**Example**
+
+Enabling introspection functions:
+
+``` sql
+SET allow_introspection_functions = 1;
+```
+
+Getting symbols from ClickHouse object files:
+
+``` sql
+WITH arrayMap(x -> demangle(addressToSymbol(x)), trace) AS all SELECT thread_id, query_id, arrayStringConcat(all, '\n') AS res FROM system.stack_trace LIMIT 1 \G
+```
+
+``` text
+Row 1:
+──────
+thread_id: 494
+query_id:
+res:       __pthread_cond_wait
+std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&)
+BaseDaemon::waitForTerminationRequest()
+DB::Server::main(std::__1::vector<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> >, std::__1::allocator<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> > > > const&)
+Poco::Util::Application::run()
+DB::Server::run()
+mainEntryClickHouseServer(int, char**)
+main
+__libc_start_main
+_start
+```
+
+Getting filenames and line numbers in ClickHouse source code:
+
+``` sql
+WITH arrayMap(x -> addressToLine(x), trace) AS all, arrayFilter(x -> x LIKE '%/dbms/%', all) AS dbms SELECT thread_id, query_id, arrayStringConcat(notEmpty(dbms) ? dbms : all, '\n') AS res FROM system.stack_trace LIMIT 1 \G
+```
+
+``` text
+Row 1:
+──────
+thread_id: 494
+query_id:
+res:       /lib/x86_64-linux-gnu/libpthread-2.27.so
+/build/obj-x86_64-linux-gnu/../contrib/libcxx/src/condition_variable.cpp:45
+/build/obj-x86_64-linux-gnu/../contrib/libcxx/include/atomic:746
+/build/obj-x86_64-linux-gnu/../contrib/libcxx/include/vector:555
+/build/obj-x86_64-linux-gnu/../contrib/poco/Util/src/Application.cpp:334
+/build/obj-x86_64-linux-gnu/../programs/server/Server.cpp:187
+/build/obj-x86_64-linux-gnu/../programs/server/Server.cpp:1149
+/build/obj-x86_64-linux-gnu/../contrib/libcxx/include/vector:461
+/lib/x86_64-linux-gnu/libc-2.27.so
+/usr/lib/debug/usr/bin/clickhouse
+```
+
+**See Also**
+
+-   [Introspection Functions](../sql-reference/functions/introspection.md) — What introspection functions are and how to use them.
+-   [system.trace_log](system-tables.md#system_tables-trace_log) — Contains stack traces collected by the sampling query profiler.
+-   [arrayMap](../sql-reference/functions/higher-order-functions.md#higher_order_functions-array-map) — Description and usage example of the `arrayMap` function.
+-   [arrayFilter](../sql-reference/functions/higher-order-functions.md#higher_order_functions-array-filter) — Description and usage example of the `arrayFilter` function.
+
 ## system.replicas {#system_tables-replicas}
 
 Contains information and status for replicated tables residing on the local server.
