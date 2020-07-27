@@ -942,7 +942,7 @@ To analyze logs, use the `addressToLine`, `addressToSymbol` and `demangle` [intr
 Columns:
 
 -   `thread_id` ([UInt64](../sql-reference/data-types/int-uint.md)) — Thread identifier.
--   `query_id` ([String](../sql-reference/data-types/string.md)) — Query identifier.
+-   `query_id` ([String](../sql-reference/data-types/string.md)) — Query identifier that can be used to get details about a query that was running from the [query_log](#system_tables-query_log) system table.
 -   `trace` ([Array(UInt64)](../sql-reference/data-types/array.md)) — A [stack trace](https://en.wikipedia.org/wiki/Stack_trace) which represents a list of physical addresses where the called methods are stored.
 
 **Example**
@@ -962,18 +962,25 @@ WITH arrayMap(x -> demangle(addressToSymbol(x)), trace) AS all SELECT thread_id,
 ``` text
 Row 1:
 ──────
-thread_id: 494
-query_id:
-res:       __pthread_cond_wait
-std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&)
-BaseDaemon::waitForTerminationRequest()
-DB::Server::main(std::__1::vector<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> >, std::__1::allocator<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> > > > const&)
-Poco::Util::Application::run()
-DB::Server::run()
-mainEntryClickHouseServer(int, char**)
-main
-__libc_start_main
-_start
+thread_id: 686
+query_id:  1a11f70b-626d-47c1-b948-f9c7b206395d
+res:       sigqueue
+DB::StorageSystemStackTrace::fillData(std::__1::vector<COW<DB::IColumn>::mutable_ptr<DB::IColumn>, std::__1::allocator<COW<DB::IColumn>::mutable_ptr<DB::IColumn> > >&, DB::Context const&, DB::SelectQueryInfo const&) const
+DB::IStorageSystemOneBlock<DB::StorageSystemStackTrace>::read(std::__1::vector<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> >, std::__1::allocator<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> > > > const&, DB::SelectQueryInfo const&, DB::Context const&, DB::QueryProcessingStage::Enum, unsigned long, unsigned int)
+DB::InterpreterSelectQuery::executeFetchColumns(DB::QueryProcessingStage::Enum, DB::QueryPipeline&, std::__1::shared_ptr<DB::PrewhereInfo> const&, std::__1::vector<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> >, std::__1::allocator<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> > > > const&)
+DB::InterpreterSelectQuery::executeImpl(DB::QueryPipeline&, std::__1::shared_ptr<DB::IBlockInputStream> const&, std::__1::optional<DB::Pipe>)
+DB::InterpreterSelectQuery::execute()
+DB::InterpreterSelectWithUnionQuery::execute()
+DB::executeQueryImpl(char const*, char const*, DB::Context&, bool, DB::QueryProcessingStage::Enum, bool, DB::ReadBuffer*)
+DB::executeQuery(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> > const&, DB::Context&, bool, DB::QueryProcessingStage::Enum, bool)
+DB::TCPHandler::runImpl()
+DB::TCPHandler::run()
+Poco::Net::TCPServerConnection::start()
+Poco::Net::TCPServerDispatcher::run()
+Poco::PooledThread::run()
+Poco::ThreadImpl::runnableEntry(void*)
+start_thread
+__clone
 ```
 
 Getting filenames and line numbers in ClickHouse source code:
@@ -985,18 +992,25 @@ WITH arrayMap(x -> addressToLine(x), trace) AS all, arrayFilter(x -> x LIKE '%/d
 ``` text
 Row 1:
 ──────
-thread_id: 494
-query_id:
-res:       /lib/x86_64-linux-gnu/libpthread-2.27.so
-/build/obj-x86_64-linux-gnu/../contrib/libcxx/src/condition_variable.cpp:45
-/build/obj-x86_64-linux-gnu/../contrib/libcxx/include/atomic:746
-/build/obj-x86_64-linux-gnu/../contrib/libcxx/include/vector:555
-/build/obj-x86_64-linux-gnu/../contrib/poco/Util/src/Application.cpp:334
-/build/obj-x86_64-linux-gnu/../programs/server/Server.cpp:187
-/build/obj-x86_64-linux-gnu/../programs/server/Server.cpp:1149
-/build/obj-x86_64-linux-gnu/../contrib/libcxx/include/vector:461
+thread_id: 686
+query_id:  cad353e7-1c29-4b2e-949f-93e597ab7a54
+res:       /lib/x86_64-linux-gnu/libc-2.27.so
+/build/obj-x86_64-linux-gnu/../src/Storages/System/StorageSystemStackTrace.cpp:182
+/build/obj-x86_64-linux-gnu/../contrib/libcxx/include/vector:656
+/build/obj-x86_64-linux-gnu/../src/Interpreters/InterpreterSelectQuery.cpp:1338
+/build/obj-x86_64-linux-gnu/../src/Interpreters/InterpreterSelectQuery.cpp:751
+/build/obj-x86_64-linux-gnu/../contrib/libcxx/include/optional:224
+/build/obj-x86_64-linux-gnu/../src/Interpreters/InterpreterSelectWithUnionQuery.cpp:192
+/build/obj-x86_64-linux-gnu/../src/Interpreters/executeQuery.cpp:384
+/build/obj-x86_64-linux-gnu/../src/Interpreters/executeQuery.cpp:643
+/build/obj-x86_64-linux-gnu/../src/Server/TCPHandler.cpp:251
+/build/obj-x86_64-linux-gnu/../src/Server/TCPHandler.cpp:1197
+/build/obj-x86_64-linux-gnu/../contrib/poco/Net/src/TCPServerConnection.cpp:57
+/build/obj-x86_64-linux-gnu/../contrib/libcxx/include/atomic:856
+/build/obj-x86_64-linux-gnu/../contrib/poco/Foundation/include/Poco/Mutex_POSIX.h:59
+/build/obj-x86_64-linux-gnu/../contrib/poco/Foundation/include/Poco/AutoPtr.h:223
+/lib/x86_64-linux-gnu/libpthread-2.27.so
 /lib/x86_64-linux-gnu/libc-2.27.so
-/usr/lib/debug/usr/bin/clickhouse
 ```
 
 **See Also**
